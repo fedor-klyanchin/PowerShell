@@ -12,4 +12,3 @@ REM Replace the extension
 call set LocationScript=%%CompleteName:%Extension%=.ps1%%
 REM Run the script PowerShell
 powershell.exe -NoLogo -NoExit -WindowStyle Normal -ExecutionPolicy Bypass -File %LocationScript%
-set /p set=
