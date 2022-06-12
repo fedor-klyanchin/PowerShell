@@ -15,7 +15,7 @@ function Test-Proxy{
     Process{
         $Proxy=Get-NetTCPConnection | #select *
             ? -FilterScript {
-                $pid -eq $_.OwningProcess -and 
+                $PID -eq $_.OwningProcess -and 
                 $_.AppliedSetting -eq 'Internet' -and
                 $_.RemoteAddress -ne '127.0.0.1' -and
                 $_.RemoteAddress -ne '0.0.0.0' -and
@@ -71,7 +71,7 @@ function Test-NetworkConnection{
                         $(
                             foreach($DefaultIPGateway in $Win32_NetworkAdapterConfiguration.DefaultIPGateway){
                                 try{
-                                    if(Test-Connection -ComputerName $DefaultIPGateway -Quiet -Count 1){
+                                    if(Test-Connection -ComputerName $DefaultIPGateway -Quiet -Count 1 -ErrorAction Ignore){
                                         $true
                                     }
                                 }
@@ -151,3 +151,4 @@ function Test-NetworkConnection{
     }
 }
 Test-NetworkConnection
+#Test-NetworkConnection -PerimeterSwitch 'gate.companyname.com'
