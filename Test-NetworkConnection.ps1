@@ -5,7 +5,7 @@ function Test-AvailabilityExternalResource{
 #Test-AvailabilityExternalResource
 
 function Test-Proxy{
-    [CmdletBinding(SupportsShouldProcess)]
+    #[CmdletBinding(SupportsShouldProcess)]
     Param(
         [parameter(Mandatory=$false)]
         [switch]$Connect,
@@ -14,7 +14,7 @@ function Test-Proxy{
     )
     Process{
         $Proxy=Get-NetTCPConnection | #select *
-            ? -FilterScript {
+            Where-Object -FilterScript {
                 $PID -eq $_.OwningProcess -and 
                 $_.AppliedSetting -eq 'Internet' -and
                 $_.RemoteAddress -ne '127.0.0.1' -and
@@ -23,11 +23,11 @@ function Test-Proxy{
                 $_.RemotePort -ne '80' -and
                 $_.RemotePort -ne '443'
             } | 
-                Sort RemoteAddress |
-                    Select -First 1 RemoteAddress,RemotePort #? RemotePort -eq 3128 #-ExpandProperty RemoteAddress 
+                Sort-Object RemoteAddress |
+                    Select-Object -First 1 RemoteAddress,RemotePort #? RemotePort -eq 3128 #-ExpandProperty RemoteAddress 
 
         if($Proxy){
-            $ProxyAddress="http://$(([System.Net.Dns]::GetHostByAddress($($Proxy.RemoteAddress))).HostName | Select -First 1):$($Proxy.RemotePort)"
+            $ProxyAddress="http://$(([System.Net.Dns]::GetHostByAddress($($Proxy.RemoteAddress))).HostName | Select-Object -First 1):$($Proxy.RemotePort)"
             if($Connect){
                 [System.Net.WebRequest]::DefaultWebProxy = New-Object System.Net.WebProxy($ProxyAddress)
                 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
@@ -46,7 +46,7 @@ function Test-Proxy{
 #Test-Proxy
 
 function Test-NetworkConnection{
-    [CmdletBinding(SupportsShouldProcess)]
+    #[CmdletBinding(SupportsShouldProcess)]
     Param(
         [parameter(Mandatory=$false)]
         [string]$ProxyAddress,
@@ -59,7 +59,7 @@ function Test-NetworkConnection{
         $Win32_NetworkAdapterConfiguration=@()
         $Win32_NetworkAdapterConfiguration=@(
             Get-WmiObject -Class Win32_NetworkAdapterConfiguration -ErrorAction Continue -Property * | #-Filter "IPEnabled=$true" 
-                Select MACAddress,Description,DHCPServer,DNSDomainSuffixSearchOrder,DNSServerSearchOrder,IPAddress,IPEnabled,DefaultIPGateway,IPSubnet #| FT -AutoSize -Wrap
+                Select-Object MACAddress,Description,DHCPServer,DNSDomainSuffixSearchOrder,DNSServerSearchOrder,IPAddress,IPEnabled,DefaultIPGateway,IPSubnet #| FT -AutoSize -Wrap
         )
 
         if($Win32_NetworkAdapterConfiguration.Count){
@@ -89,8 +89,8 @@ function Test-NetworkConnection{
 
                 if($env:USERDOMAIN -ne $env:COMPUTERNAME){
                     $TestConnectionDomain=Test-Connection $env:USERDNSDOMAIN -Count 1 -ErrorAction Ignore
-                    if($TestConnectionDomain | Select -ExpandProperty ProtocolAddress){
-                        Write-Host -ForegroundColor Green "$((Get-Date).ToString()) - $env:COMPUTERNAME - $env:USERNAME - Domain $($env:USERDNSDOMAIN) ($($TestConnectionDomain | Select -ExpandProperty ProtocolAddress)) available"
+                    if($TestConnectionDomain | Select-Object -ExpandProperty ProtocolAddress){
+                        Write-Host -ForegroundColor Green "$((Get-Date).ToString()) - $env:COMPUTERNAME - $env:USERNAME - Domain $($env:USERDNSDOMAIN) ($($TestConnectionDomain | Select-Object -ExpandProperty ProtocolAddress)) available"
                     }
                     else{
                         Write-Host -ForegroundColor Red "$((Get-Date).ToString()) - $env:COMPUTERNAME - $env:USERNAME - Domain $($env:USERDNSDOMAIN) not available"
@@ -130,7 +130,7 @@ function Test-NetworkConnection{
                 }
 
                 if($PerimeterSwitch){
-                    foreach($Provider in $(try{([System.Net.Dns]::GetHostByName($PerimeterSwitch)).AddressList | Sort IPAddressToString | Select -ExpandProperty IPAddressToString}catch{})){
+                    foreach($Provider in $(try{([System.Net.Dns]::GetHostByName($PerimeterSwitch)).AddressList | Sort-Object IPAddressToString | Select-Object -ExpandProperty IPAddressToString}catch{})){
                         if(Test-Connection $Provider -Count 1 -Quiet -ErrorAction Ignore){
                             Write-Host -ForegroundColor Green "$((Get-Date).ToString()) - $env:COMPUTERNAME - $env:USERNAME - Provider '$Provider' available"
                         }
@@ -142,7 +142,7 @@ function Test-NetworkConnection{
             }
             else{
                 Write-Host -ForegroundColor Red "$((Get-Date).ToString()) - $env:COMPUTERNAME - $env:USERNAME - Offline. No network connection"
-                $Win32_NetworkAdapterConfiguration | ? MACAddress -like '*:*' | Sort Description | Select Description,MACAddress
+                $Win32_NetworkAdapterConfiguration | Where-Object MACAddress -like '*:*' | Sort-Object Description | Select-Object Description,MACAddress
             }
         }
         else{
